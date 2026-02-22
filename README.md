@@ -37,7 +37,7 @@ docker run -d \
   --name whm2bunny \
   -p 9090:9090 \
   -e BUNNY_API_KEY=your-key \
-  -e REVERSE_PROXY_IP=your-ip \
+  -e ORIGIN_IP=your-ip \
   -e WHM_HOOK_SECRET=your-secret \
   mordenhost/whm2bunny:latest
 ```
@@ -54,7 +54,7 @@ cp config.yaml.example config.yaml
 
 # Set environment variables
 export BUNNY_API_KEY="your-api-key"
-export REVERSE_PROXY_IP="your-server-ip"
+export ORIGIN_IP="your-server-ip"
 export WHM_HOOK_SECRET="your-webhook-secret"
 
 # Start
@@ -68,7 +68,7 @@ docker-compose up -d
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `BUNNY_API_KEY` | Yes | Bunny.net API key |
-| `REVERSE_PROXY_IP` | Yes | IP of Nginx/Caddy reverse proxy |
+| `ORIGIN_IP` | Yes | IP of WHM/cPanel origin server |
 | `WHM_HOOK_SECRET` | Yes | HMAC secret for webhook verification |
 | `TELEGRAM_BOT_TOKEN` | No | Telegram bot token |
 | `TELEGRAM_CHAT_ID` | No | Telegram chat ID |
@@ -95,7 +95,7 @@ cdn:
   regions: [asia]
 
 origin:
-  reverse_proxy_ip: "${REVERSE_PROXY_IP}"
+  ip: "${ORIGIN_IP}"
 
 webhook:
   secret: "${WHM_HOOK_SECRET}"

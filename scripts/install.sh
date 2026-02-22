@@ -106,8 +106,8 @@ cat > /etc/whm2bunny/env << EOF
 # Bunny.net API Configuration
 BUNNY_API_KEY=\${BUNNY_API_KEY:-}
 
-# Reverse Proxy Configuration
-REVERSE_PROXY_IP=\${REVERSE_PROXY_IP:-}
+# Origin Server Configuration (WHM/cPanel server IP)
+ORIGIN_IP=\${ORIGIN_IP:-}
 
 # Webhook Secret (keep this secret!)
 WHM_HOOK_SECRET=$WHM2BUNNY_SECRET
@@ -173,7 +173,7 @@ echo "   ${GREEN}nano /etc/whm2bunny/config.yaml${NC}"
 echo ""
 echo "2. Set environment variables in /etc/whm2bunny/env or export them:"
 echo "   ${GREEN}export BUNNY_API_KEY='your-api-key'${NC}"
-echo "   ${GREEN}export REVERSE_PROXY_IP='your-server-ip'${NC}"
+echo "   ${GREEN}export ORIGIN_IP='your-server-ip'${NC}"
 echo ""
 echo "3. Validate configuration:"
 echo "   ${GREEN}/opt/whm2bunny/whm2bunny config validate /etc/whm2bunny/config.yaml${NC}"

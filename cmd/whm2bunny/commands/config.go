@@ -168,7 +168,7 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 	fmt.Printf("  Origin Shield Region: %s\n", cfg.CDN.OriginShieldRegion)
 	fmt.Printf("  Regions: %v\n", cfg.CDN.Regions)
 	fmt.Printf("\nOrigin:\n")
-	fmt.Printf("  Reverse Proxy IP: %s\n", cfg.Origin.ReverseProxyIP)
+	fmt.Printf("  IP: %s\n", cfg.Origin.IP)
 	fmt.Printf("\nWebhook:\n")
 	fmt.Printf("  Secret: %s\n", maskSensitive(cfg.Webhook.Secret))
 	fmt.Printf("\nTelegram:\n")

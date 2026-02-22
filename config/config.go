@@ -47,7 +47,7 @@ type CDNConfig struct {
 
 // OriginConfig holds origin server configuration
 type OriginConfig struct {
-	ReverseProxyIP string `mapstructure:"reverse_proxy_ip"`
+	IP string `mapstructure:"ip"`
 }
 
 // WebhookConfig holds webhook configuration
@@ -84,7 +84,7 @@ type LoggingConfig struct {
 // Environment variables take precedence over file values
 // Supported environment variables:
 // - BUNNY_API_KEY: Bunny.net API key
-// - REVERSE_PROXY_IP: Reverse proxy IP address
+// - ORIGIN_IP: Origin server IP address (WHM/cPanel server)
 // - WHM_HOOK_SECRET: Webhook HMAC secret
 // - TELEGRAM_BOT_TOKEN: Telegram bot token (optional)
 // - TELEGRAM_CHAT_ID: Telegram chat ID (optional)
@@ -134,8 +134,8 @@ func Load(path string) (*Config, error) {
 	if apiKey := os.Getenv("BUNNY_API_KEY"); apiKey != "" {
 		cfg.Bunny.APIKey = apiKey
 	}
-	if proxyIP := os.Getenv("REVERSE_PROXY_IP"); proxyIP != "" {
-		cfg.Origin.ReverseProxyIP = proxyIP
+	if originIP := os.Getenv("ORIGIN_IP"); originIP != "" {
+		cfg.Origin.IP = originIP
 	}
 	if secret := os.Getenv("WHM_HOOK_SECRET"); secret != "" {
 		cfg.Webhook.Secret = secret
@@ -160,8 +160,8 @@ func (c *Config) Validate() error {
 	if c.Bunny.APIKey == "" {
 		return fmt.Errorf("bunny.api_key is required (set BUNNY_API_KEY env var)")
 	}
-	if c.Origin.ReverseProxyIP == "" {
-		return fmt.Errorf("origin.reverse_proxy_ip is required (set REVERSE_PROXY_IP env var)")
+	if c.Origin.IP == "" {
+		return fmt.Errorf("origin.ip is required (set ORIGIN_IP env var)")
 	}
 	if c.Webhook.Secret == "" {
 		return fmt.Errorf("webhook.secret is required (set WHM_HOOK_SECRET env var)")
@@ -213,7 +213,7 @@ func setDefaults(v *viper.Viper) {
 func substituteEnvVars(cfg *Config) {
 	cfg.Bunny.APIKey = envSubstitute(cfg.Bunny.APIKey)
 	cfg.Bunny.BaseURL = envSubstitute(cfg.Bunny.BaseURL)
-	cfg.Origin.ReverseProxyIP = envSubstitute(cfg.Origin.ReverseProxyIP)
+	cfg.Origin.IP = envSubstitute(cfg.Origin.IP)
 	cfg.Webhook.Secret = envSubstitute(cfg.Webhook.Secret)
 	cfg.Telegram.BotToken = envSubstitute(cfg.Telegram.BotToken)
 	cfg.Telegram.ChatID = envSubstitute(cfg.Telegram.ChatID)

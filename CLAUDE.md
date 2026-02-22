@@ -34,7 +34,7 @@ WHM/cPanel Hook → POST /hook → whm2bunny HTTP Server
 | Variable | Description |
 |----------|-------------|
 | `BUNNY_API_KEY` | Bunny.net API key |
-| `REVERSE_PROXY_IP` | IP of Nginx/Caddy reverse proxy |
+| `ORIGIN_IP` | IP of WHM/cPanel origin server |
 | `ORIGIN_SHIELD_REGION` | Default: `SG` (Singapore) |
 | `WHM_HOOK_SECRET` | HMAC secret for webhook verification |
 | `SERVER_PORT` | Default: `9090` |

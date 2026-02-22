@@ -118,7 +118,7 @@ func (s *SubdomainProvisioner) findParentAndCreatePullZone(ctx context.Context, 
 	}
 
 	// Create the pull zone
-	originIP := s.provisioner.config.Origin.ReverseProxyIP
+	originIP := s.provisioner.config.Origin.IP
 	pullZone, err := s.provisioner.bunnyClient.CreatePullZone(ctx, fullDomain, originIP)
 	if err != nil {
 		s.provisioner.logger.Error("failed to create pull zone for subdomain",

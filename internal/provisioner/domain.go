@@ -136,7 +136,7 @@ func (d *DomainProvisioner) addDNSRecords(ctx context.Context, zoneID int64, dom
 		zap.Int64("zone_id", zoneID),
 	)
 
-	reverseProxyIP := d.provisioner.config.Origin.ReverseProxyIP
+	originIP := d.provisioner.config.Origin.IP
 
 	// Get existing records to check for duplicates
 	existingRecords, err := d.provisioner.bunnyClient.GetDNSRecords(ctx, zoneID)
@@ -157,12 +157,12 @@ func (d *DomainProvisioner) addDNSRecords(ctx context.Context, zoneID int64, dom
 		return false
 	}
 
-	// Add A record: @ -> reverseProxyIP
+	// Add A record: @ -> originIP
 	if !recordExists("@", bunny.DNSRecordTypeA) {
 		aRecord := &bunny.AddDNSRecordRequest{
 			Type:    bunny.DNSRecordTypeA,
 			Name:    "@",
-			Value:   reverseProxyIP,
+			Value:   originIP,
 			TTL:     defaultDNSRecordTTL,
 			Enabled: true,
 		}
@@ -172,7 +172,7 @@ func (d *DomainProvisioner) addDNSRecords(ctx context.Context, zoneID int64, dom
 		d.provisioner.logger.Debug("added A record",
 			zap.String("domain", domain),
 			zap.String("name", "@"),
-			zap.String("value", reverseProxyIP),
+			zap.String("value", originIP),
 		)
 	} else {
 		d.provisioner.logger.Debug("A record already exists, skipping",
@@ -310,7 +310,7 @@ func (d *DomainProvisioner) createPullZone(ctx context.Context, domain string, p
 	}
 
 	// Create the pull zone
-	originIP := d.provisioner.config.Origin.ReverseProxyIP
+	originIP := d.provisioner.config.Origin.IP
 	pullZone, err := d.provisioner.bunnyClient.CreatePullZone(ctx, domain, originIP)
 	if err != nil {
 		d.provisioner.logger.Error("failed to create pull zone",

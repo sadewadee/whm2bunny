@@ -31,9 +31,9 @@ cdn:
     - asia
 
 origin:
-  # IP address of the reverse proxy (Nginx/Caddy)
-  # All domains will point to this IP via CDN
-  reverse_proxy_ip: "${REVERSE_PROXY_IP}"
+  # IP address of the origin server (WHM/cPanel server)
+  # BunnyCDN will connect directly to this IP
+  ip: "${ORIGIN_IP}"
 
 webhook:
   # HMAC secret for webhook signature verification

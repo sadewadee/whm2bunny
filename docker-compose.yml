@@ -29,7 +29,7 @@ services:
     environment:
       # Bunny.net Configuration
       - BUNNY_API_KEY=${BUNNY_API_KEY}
-      - REVERSE_PROXY_IP=${REVERSE_PROXY_IP}
+      - ORIGIN_IP=${ORIGIN_IP}
 
       # Webhook Configuration
       - WHM_HOOK_SECRET=${WHM_HOOK_SECRET}

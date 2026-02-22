@@ -5,7 +5,7 @@ bunny:
   api_key: ""
 
 origin:
-  reverse_proxy_ip: "192.168.1.1"
+  ip: "192.168.1.1"
 
 webhook:
   secret: "test-secret"

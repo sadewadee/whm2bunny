@@ -9,11 +9,11 @@ import (
 func TestLoadDefaults(t *testing.T) {
 	// Set required env vars
 	os.Setenv("BUNNY_API_KEY", "test-api-key")
-	os.Setenv("REVERSE_PROXY_IP", "192.0.2.1")
+	os.Setenv("ORIGIN_IP", "192.0.2.1")
 	os.Setenv("WHM_HOOK_SECRET", "test-secret")
 	defer func() {
 		os.Unsetenv("BUNNY_API_KEY")
-		os.Unsetenv("REVERSE_PROXY_IP")
+		os.Unsetenv("ORIGIN_IP")
 		os.Unsetenv("WHM_HOOK_SECRET")
 	}()
 
@@ -75,7 +75,7 @@ cdn:
     - europe
 
 origin:
-  reverse_proxy_ip: "${REVERSE_PROXY_IP}"
+  ip: "${ORIGIN_IP}"
 
 webhook:
   secret: "${WHM_HOOK_SECRET}"
@@ -104,13 +104,13 @@ logging:
 
 	// Set required env vars
 	os.Setenv("BUNNY_API_KEY", "file-api-key")
-	os.Setenv("REVERSE_PROXY_IP", "203.0.113.1")
+	os.Setenv("ORIGIN_IP", "203.0.113.1")
 	os.Setenv("WHM_HOOK_SECRET", "file-secret")
 	os.Setenv("TELEGRAM_BOT_TOKEN", "test-token")
 	os.Setenv("TELEGRAM_CHAT_ID", "123456")
 	defer func() {
 		os.Unsetenv("BUNNY_API_KEY")
-		os.Unsetenv("REVERSE_PROXY_IP")
+		os.Unsetenv("ORIGIN_IP")
 		os.Unsetenv("WHM_HOOK_SECRET")
 		os.Unsetenv("TELEGRAM_BOT_TOKEN")
 		os.Unsetenv("TELEGRAM_CHAT_ID")
@@ -151,8 +151,8 @@ logging:
 	if cfg.Bunny.APIKey != "file-api-key" {
 		t.Errorf("Expected Bunny.APIKey 'file-api-key', got %s", cfg.Bunny.APIKey)
 	}
-	if cfg.Origin.ReverseProxyIP != "203.0.113.1" {
-		t.Errorf("Expected Origin.ReverseProxyIP '203.0.113.1', got %s", cfg.Origin.ReverseProxyIP)
+	if cfg.Origin.IP != "203.0.113.1" {
+		t.Errorf("Expected Origin.IP '203.0.113.1', got %s", cfg.Origin.IP)
 	}
 	if cfg.Telegram.BotToken != "test-token" {
 		t.Errorf("Expected Telegram.BotToken 'test-token', got %s", cfg.Telegram.BotToken)
@@ -170,7 +170,7 @@ func TestValidateMissingRequired(t *testing.T) {
 			name:      "missing api key",
 			unsetVars: []string{},
 			setVars: map[string]string{
-				"REVERSE_PROXY_IP": "192.0.2.1",
+				"ORIGIN_IP": "192.0.2.1",
 				"WHM_HOOK_SECRET":  "test-secret",
 			},
 			wantErr: "bunny.api_key is required",
@@ -182,14 +182,14 @@ func TestValidateMissingRequired(t *testing.T) {
 				"BUNNY_API_KEY":   "test-api-key",
 				"WHM_HOOK_SECRET": "test-secret",
 			},
-			wantErr: "origin.reverse_proxy_ip is required",
+			wantErr: "origin.ip is required",
 		},
 		{
 			name:      "missing webhook secret",
 			unsetVars: []string{},
 			setVars: map[string]string{
 				"BUNNY_API_KEY":    "test-api-key",
-				"REVERSE_PROXY_IP": "192.0.2.1",
+				"ORIGIN_IP": "192.0.2.1",
 			},
 			wantErr: "webhook.secret is required",
 		},
@@ -200,13 +200,13 @@ func TestValidateMissingRequired(t *testing.T) {
 			// Clean up env vars
 			defer func() {
 				os.Unsetenv("BUNNY_API_KEY")
-				os.Unsetenv("REVERSE_PROXY_IP")
+				os.Unsetenv("ORIGIN_IP")
 				os.Unsetenv("WHM_HOOK_SECRET")
 			}()
 
 			// Unset all first
 			os.Unsetenv("BUNNY_API_KEY")
-			os.Unsetenv("REVERSE_PROXY_IP")
+			os.Unsetenv("ORIGIN_IP")
 			os.Unsetenv("WHM_HOOK_SECRET")
 
 			// Set only the specified vars

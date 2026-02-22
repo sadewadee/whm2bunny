@@ -16,7 +16,7 @@ cdn:
   regions: [asia]
 
 origin:
-  reverse_proxy_ip: "${REVERSE_PROXY_IP}"
+  ip: "${ORIGIN_IP}"
 
 webhook:
   secret: "${WHM_HOOK_SECRET}"
