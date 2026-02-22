@@ -1,0 +1,70 @@
+# Binaries
+whm2bunny
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Build artifacts
+build/
+dist/
+
+# Test files
+*_test.go
+coverage.out
+coverage.html
+
+# Documentation
+*.md
+!CLAUDE.md
+docs/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Scripts
+scripts/
+
+# Config (use mounted volume instead)
+config.yaml
+config.yaml.example
+
+# Test
+test/
+
+# State
+*.db
+state.json

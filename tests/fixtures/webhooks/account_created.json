@@ -1,0 +1,5 @@
+{
+  "event": "account_created",
+  "domain": "example.com",
+  "user": "testuser"
+}

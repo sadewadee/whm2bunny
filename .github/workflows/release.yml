@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Release Assets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Get version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build binaries
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          COMMIT=$(git rev-parse --short HEAD)
+          BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
+          LDFLAGS="-w -s -X main.Version=${VERSION} -X main.GitCommit=${COMMIT} -X main.BuildTime=${BUILD_TIME}"
+
+          # Linux amd64
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "${LDFLAGS}" -o dist/whm2bunny-linux-amd64 ./cmd/whm2bunny
+
+          # Linux arm64
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o dist/whm2bunny-linux-arm64 ./cmd/whm2bunny
+
+          # macOS amd64
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags "${LDFLAGS}" -o dist/whm2bunny-darwin-amd64 ./cmd/whm2bunny
+
+          # macOS arm64
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o dist/whm2bunny-darwin-arm64 ./cmd/whm2bunny
+
+      - name: Create archives
+        run: |
+          cd dist
+          for binary in whm2bunny-*; do
+            os_arch=${binary#whm2bunny-}
+            mkdir -p whm2bunny-${os_arch}
+            cp ${binary} whm2bunny-${os_arch}/whm2bunny
+            cp ../config.yaml.example whm2bunny-${os_arch}/config.yaml.example
+            cp ../scripts/install.sh whm2bunny-${os_arch}/install.sh
+            cp ../scripts/hook_handler.pl whm2bunny-${os_arch}/hook_handler.pl
+            tar -czvf whm2bunny-${os_arch}.tar.gz whm2bunny-${os_arch}
+            rm -rf whm2bunny-${os_arch}
+          done
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum *.tar.gz > checksums.sha256
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: dist/
+          retention-days: 7
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: dist/
+
+      - name: Get version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          echo "## Changelog" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "### Changes since ${PREV_TAG}" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            git log ${PREV_TAG}..HEAD --oneline --no-merges >> CHANGELOG.md || true
+          else
+            echo "### Initial Release" >> CHANGELOG.md
+          fi
+
+          echo "" >> CHANGELOG.md
+          echo "## Downloads" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "| Platform | Architecture | Download |" >> CHANGELOG.md
+          echo "|----------|-------------|----------|" >> CHANGELOG.md
+          echo "| Linux | amd64 | \`whm2bunny-linux-amd64.tar.gz\` |" >> CHANGELOG.md
+          echo "| Linux | arm64 | \`whm2bunny-linux-arm64.tar.gz\` |" >> CHANGELOG.md
+          echo "| macOS | amd64 (Intel) | \`whm2bunny-darwin-amd64.tar.gz\` |" >> CHANGELOG.md
+          echo "| macOS | arm64 (Apple Silicon) | \`whm2bunny-darwin-arm64.tar.gz\` |" >> CHANGELOG.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.tar.gz
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ contains(steps.get_version.outputs.VERSION, '-') }}
+          generate_release_notes: true
+
+  docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        if: github.event_name != 'pull_request'
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            mordenhost/whm2bunny:latest
+            mordenhost/whm2bunny:${{ steps.get_version.outputs.VERSION }}
+          build-args: |
+            VERSION=${{ steps.get_version.outputs.VERSION }}
+            COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}

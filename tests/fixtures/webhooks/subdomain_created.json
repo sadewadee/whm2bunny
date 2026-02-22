@@ -1,0 +1,6 @@
+{
+  "event": "subdomain_created",
+  "subdomain": "blog",
+  "parent_domain": "example.com",
+  "user": "testuser"
+}

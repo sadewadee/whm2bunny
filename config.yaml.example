@@ -1,0 +1,76 @@
+# whm2bunny Configuration File
+# Copy this file to config.yaml and update with your values
+# Environment variables can be used with ${VAR_NAME} syntax
+
+server:
+  port: 9090
+  host: "127.0.0.1"
+
+bunny:
+  # Bunny.net API key (required)
+  # Get from: https://panel.bunny.net/account/settings
+  api_key: "${BUNNY_API_KEY}"
+  # Base URL for Bunny.net API (rarely needs to change)
+  base_url: "https://api.bunny.net"
+
+dns:
+  # Primary nameserver (custom nameserver pointing to bunny)
+  nameserver1: "ns1.mordenhost.com"
+  # Secondary nameserver (custom nameserver pointing to bunny)
+  nameserver2: "ns2.mordenhost.com"
+  # SOA contact email for DNS zones
+  soa_email: "hostmaster@mordenhost.com"
+
+cdn:
+  # Origin shield region for CDN (SG = Singapore)
+  # Options: SG, LA, NY, KR, SYD, etc.
+  origin_shield_region: "SG"
+  # Enabled CDN regions (asia = Asia + Oceania)
+  # Options: asia, europe, north-america, south-america, africa, australia
+  regions:
+    - asia
+
+origin:
+  # IP address of the reverse proxy (Nginx/Caddy)
+  # All domains will point to this IP via CDN
+  reverse_proxy_ip: "${REVERSE_PROXY_IP}"
+
+webhook:
+  # HMAC secret for webhook signature verification
+  # Generate a strong random string and keep it secret
+  secret: "${WHM_HOOK_SECRET}"
+
+telegram:
+  # Telegram bot token (optional)
+  # Create a bot via @BotFather on Telegram
+  bot_token: "${TELEGRAM_BOT_TOKEN}"
+  # Telegram chat ID to send notifications to (optional)
+  # Get your chat ID from @userinfobot on Telegram
+  chat_id: "${TELEGRAM_CHAT_ID}"
+  # Enable/disable Telegram notifications
+  enabled: true
+  # Events to send notifications for
+  events:
+    - provisioning_success
+    - provisioning_failed
+    - ssl_issued
+    - bandwidth_alert
+    - deprovisioned
+    - subdomain_provisioned
+  # Daily summary configuration
+  summary:
+    enabled: true
+    # Cron schedule for daily summary (9 AM daily)
+    schedule: "0 9 * * *"
+    # Timezone for the schedule
+    timezone: "Asia/Jakarta"
+    # Number of top bandwidth zones to include in summary
+    include_top_bandwidth: 20
+    # Bandwidth alert threshold in GB
+    bandwidth_alert_threshold: 50
+
+logging:
+  # Log level: debug, info, warn, error
+  level: "info"
+  # Log format: json or text
+  format: "json"

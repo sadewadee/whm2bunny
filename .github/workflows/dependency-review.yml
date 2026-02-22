@@ -1,0 +1,52 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC
+
+  dependency-graph:
+    name: Dependency Graph
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Generate dependency graph
+        run: |
+          go mod graph > dependency-graph.txt
+          echo "## Dependency Graph" > dependencies.md
+          echo "" >> dependencies.md
+          echo '```' >> dependencies.md
+          head -50 dependency-graph.txt >> dependencies.md
+          echo '```' >> dependencies.md
+
+      - name: Upload dependency graph
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-graph
+          path: dependency-graph.txt
+          retention-days: 30

@@ -1,0 +1,45 @@
+server:
+  port: 9090
+  host: "127.0.0.1"
+
+bunny:
+  api_key: "${BUNNY_API_KEY}"
+  base_url: "https://api.bunny.net"
+
+dns:
+  nameserver1: "ns1.mordenhost.com"
+  nameserver2: "ns2.mordenhost.com"
+  soa_email: "hostmaster@mordenhost.com"
+
+cdn:
+  origin_shield_region: "SG"
+  regions: [asia]
+
+origin:
+  reverse_proxy_ip: "${REVERSE_PROXY_IP}"
+
+webhook:
+  secret: "${WHM_HOOK_SECRET}"
+
+telegram:
+  bot_token: "${TELEGRAM_BOT_TOKEN}"
+  chat_id: "${TELEGRAM_CHAT_ID}"
+  enabled: true
+  events:
+    - provisioning_success
+    - provisioning_failed
+    - ssl_issued
+    - bandwidth_alert
+    - deprovisioned
+    - subdomain_provisioned
+  summary:
+    enabled: true
+    schedule: "0 9 * * *"
+    weekly_schedule: "0 9 * * 1"
+    timezone: "Asia/Jakarta"
+    include_top_bandwidth: 20
+    bandwidth_alert_threshold: 50
+
+logging:
+  level: "info"
+  format: "json"

@@ -1,10 +1,15 @@
 package main
 
 import (
-	_ "github.com/google/uuid"
-	_ "go.uber.org/zap"
+	"fmt"
+	"os"
+
+	"github.com/mordenhost/whm2bunny/cmd/whm2bunny/commands"
 )
 
 func main() {
-	// TODO: Initialize and run the application
+	if err := commands.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }

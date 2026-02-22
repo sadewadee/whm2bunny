@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  whm2bunny:
+    build:
+      context: .
+      args:
+        VERSION: ${VERSION:-dev}
+        COMMIT: ${COMMIT:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
+    image: whm2bunny:${VERSION:-latest}
+    container_name: whm2bunny
+    restart: unless-stopped
+
+    # Port mapping
+    ports:
+      - "${SERVER_PORT:-9090}:9090"
+
+    # Volume mounts
+    volumes:
+      # Configuration file (read-only for security)
+      - ./config.yaml:/etc/whm2bunny/config.yaml:ro
+      # State directory for persistence
+      - whm2bunny-data:/var/lib/whm2bunny
+      # Log directory
+      - whm2bunny-logs:/var/log/whm2bunny
+
+    # Environment variables
+    environment:
+      # Bunny.net Configuration
+      - BUNNY_API_KEY=${BUNNY_API_KEY}
+      - REVERSE_PROXY_IP=${REVERSE_PROXY_IP}
+
+      # Webhook Configuration
+      - WHM_HOOK_SECRET=${WHM_HOOK_SECRET}
+
+      # Telegram Notifications (optional)
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+
+      # Server Configuration
+      - SERVER_PORT=9090
+      - SERVER_HOST=0.0.0.0
+
+      # State file location
+      - STATE_FILE=/var/lib/whm2bunny/state.json
+
+      # Debug mode (uncomment to enable)
+      # - DEBUG=true
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    # Resource limits (optional but recommended)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Network
+    networks:
+      - whm2bunny-network
+
+# Named volumes for data persistence
+volumes:
+  whm2bunny-data:
+    driver: local
+  whm2bunny-logs:
+    driver: local
+
+# Network definition
+networks:
+  whm2bunny-network:
+    driver: bridge
