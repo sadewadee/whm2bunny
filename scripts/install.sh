@@ -63,14 +63,18 @@ if [ -f "./whm2bunny" ] && [ -x "./whm2bunny" ]; then
     cp ./whm2bunny "$BINARY_PATH"
 else
     # Download from releases
-    RELEASE_URL="https://releases.mordenhost.com/whm2bunny/latest/whm2bunny-linux-${ARCH}"
+    RELEASE_URL="https://github.com/mordenhost/whm2bunny/releases/latest/download/whm2bunny-linux-${ARCH}.tar.gz"
     echo -e "${GREEN}Downloading binary from:${NC} $RELEASE_URL"
 
-    if ! curl -fsSL "$RELEASE_URL" -o "$BINARY_PATH"; then
+    if ! curl -fsSL "$RELEASE_URL" | tar xzf - -C /tmp; then
         echo -e "${RED}Error: Failed to download binary${NC}"
         echo "Please download manually or build from source"
         exit 1
     fi
+
+    # Move binary from extracted directory
+    mv /tmp/whm2bunny-linux-${ARCH}/whm2bunny "$BINARY_PATH"
+    rm -rf /tmp/whm2bunny-linux-${ARCH}
 fi
 
 # Make binary executable

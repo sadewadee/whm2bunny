@@ -22,8 +22,8 @@ A Go daemon that auto-provisions **BunnyDNS Zone + BunnyCDN Pull Zone** when a n
 ### Binary Installation
 
 ```bash
-# Download latest release
-curl -sSL https://releases.mordenhost.com/whm2bunny/latest/whm2bunny-linux-amd64 -o whm2bunny
+# Download latest release from GitHub
+curl -sSL https://github.com/mordenhost/whm2bunny/releases/latest/download/whm2bunny-linux-amd64.tar.gz | tar xz
 chmod +x whm2bunny
 
 # Generate config
