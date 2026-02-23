@@ -159,6 +159,11 @@ func (p *Provisioner) Provision(domain, user string) error {
 		)
 	}
 
+	// Check SSL certificate status (after successful provisioning)
+	if finalState != nil && finalState.PullZoneID > 0 {
+		p.checkAndNotifySSL(ctx, domain, finalState.PullZoneID)
+	}
+
 	p.logger.Info("domain provisioning completed successfully",
 		zap.String("domain", domain),
 		zap.Duration("duration", duration),
@@ -311,7 +316,8 @@ func (p *Provisioner) Deprovision(domain string) error {
 	return nil
 }
 
-// Recover attempts to recover failed or pending provisions
+// Recover attempts to recover failed or pending provisions with backoff delay
+// The delay prevents overwhelming the Bunny API with simultaneous requests
 func (p *Provisioner) Recover(ctx context.Context) error {
 	states := p.stateManager.Recover()
 
@@ -319,11 +325,18 @@ func (p *Provisioner) Recover(ctx context.Context) error {
 		zap.Int("count", len(states)),
 	)
 
-	for _, st := range states {
+	if len(states) == 0 {
+		return nil
+	}
+
+	// Recover with backoff: 2-5 seconds between each domain
+	for i, st := range states {
 		p.logger.Info("recovering provision",
 			zap.String("domain", st.Domain),
 			zap.String("status", st.Status),
 			zap.Int("retries", st.Retries),
+			zap.Int("index", i+1),
+			zap.Int("total", len(states)),
 		)
 
 		// Check if we've exceeded retry limit
@@ -335,16 +348,91 @@ func (p *Provisioner) Recover(ctx context.Context) error {
 			continue
 		}
 
+		// Add backoff delay between domains (2-5 seconds)
+		// This prevents rate limiting from Bunny API
+		if i > 0 {
+			delay := 2 + (i % 3) // Alternates between 2, 3, 4 seconds
+			p.logger.Debug("backoff delay before next recovery",
+				zap.Int("delay_seconds", delay),
+			)
+			select {
+			case <-time.After(time.Duration(delay) * time.Second):
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+
 		// Re-provision the domain
 		if err := p.Provision(st.Domain, ""); err != nil {
 			p.logger.Error("recovery failed",
 				zap.String("domain", st.Domain),
 				zap.Error(err),
 			)
+		} else {
+			p.logger.Info("recovery succeeded",
+				zap.String("domain", st.Domain),
+			)
 		}
 	}
 
+	p.logger.Info("recovery completed",
+		zap.Int("total_processed", len(states)),
+	)
+
 	return nil
+}
+
+// checkAndNotifySSL checks SSL certificate status after provisioning
+// and sends a notification if a certificate is issued.
+// This is a non-blocking check that runs after successful provisioning.
+func (p *Provisioner) checkAndNotifySSL(ctx context.Context, domain string, pullZoneID int64) {
+	if pullZoneID <= 0 {
+		return
+	}
+
+	go func() {
+		// Create a new context for background operation
+		bgCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// Wait for SSL to be issued (BunnyCDN auto-issues SSL)
+		time.Sleep(10 * time.Second)
+
+		p.logger.Debug("checking SSL certificate status",
+			zap.String("domain", domain),
+			zap.Int64("pull_zone_id", pullZoneID),
+		)
+
+		cert, err := p.bunnyClient.GetSSLCertificate(bgCtx, pullZoneID)
+		if err != nil {
+			p.logger.Debug("SSL certificate not yet available",
+				zap.String("domain", domain),
+				zap.Error(err),
+			)
+			return
+		}
+
+		if cert.Status == "Issued" || cert.Status == "Active" {
+			p.logger.Info("SSL certificate issued",
+				zap.String("domain", domain),
+				zap.String("issuer", cert.Issuer),
+				zap.Time("expires", cert.ExpirationDate),
+			)
+
+			// Send notification
+			if err := p.notifier.NotifySSLIssued(bgCtx, domain, cert.Issuer, cert.ExpirationDate); err != nil {
+				p.logger.Warn("failed to send SSL notification",
+					zap.String("domain", domain),
+					zap.Error(err),
+				)
+			}
+		} else {
+			p.logger.Debug("SSL certificate pending",
+				zap.String("domain", domain),
+				zap.String("status", cert.Status),
+			)
+		}
+	}()
 }
 
 // generatePullZoneName generates a pull zone name from a domain

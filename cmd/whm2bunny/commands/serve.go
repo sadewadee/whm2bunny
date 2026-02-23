@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -16,9 +17,9 @@ import (
 	"github.com/mordenhost/whm2bunny/internal/bunny"
 	"github.com/mordenhost/whm2bunny/internal/notifier"
 	"github.com/mordenhost/whm2bunny/internal/provisioner"
+	"github.com/mordenhost/whm2bunny/internal/scheduler"
 	"github.com/mordenhost/whm2bunny/internal/state"
 	"github.com/mordenhost/whm2bunny/internal/webhook"
-	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -34,8 +35,10 @@ var (
 	stateManager *state.Manager
 	// telegramNotifier holds the Telegram notifier instance
 	telegramNotifier *notifier.TelegramNotifier
-	// cronScheduler holds the cron scheduler instance
-	cronScheduler *cron.Cron
+	// scheduler holds the scheduler instance
+	schedulerInstance *scheduler.Scheduler
+	// snapshotStore holds the bandwidth snapshot store
+	snapshotStore *state.SnapshotStore
 	// bunnyClient holds the Bunny client instance
 	bunnyClient *bunny.Client
 	// logger holds the logger instance
@@ -123,13 +126,35 @@ func runServe(cmd *cobra.Command, args []string) error {
 		logger,
 	)
 
-	// 8. Create scheduler (if Telegram summary is enabled)
-	if cfg.Telegram.Summary.Enabled && telegramNotifier.IsEnabled() {
-		cronScheduler = cron.New(cron.WithLocation(time.UTC))
-		// Add summary job here when implemented
-		logger.Info("Cron scheduler enabled",
-			zap.String("schedule", cfg.Telegram.Summary.Schedule),
+	// 8. Create SnapshotStore and Scheduler
+	snapshotFile := "/var/lib/whm2bunny/snapshots.json"
+	if envState := os.Getenv("STATE_FILE"); envState != "" && strings.HasSuffix(envState, "state.json") {
+		// Use same directory as state file
+		snapshotFile = envState[:len(envState)-len("state.json")] + "snapshots.json"
+	}
+	snapshotStore, err = state.NewSnapshotStore(snapshotFile, logger)
+	if err != nil {
+		logger.Warn("Failed to create snapshot store", zap.Error(err))
+		// Continue without snapshot store
+	}
+
+	// Start scheduler if Telegram is enabled
+	if telegramNotifier.IsEnabled() {
+		schedulerInstance = scheduler.NewScheduler(
+			cfg,
+			bunnyClient,
+			telegramNotifier,
+			snapshotStore,
+			logger,
 		)
+		if err := schedulerInstance.Start(); err != nil {
+			logger.Warn("Failed to start scheduler", zap.Error(err))
+		} else {
+			logger.Info("Scheduler started",
+				zap.String("daily_schedule", cfg.Telegram.Summary.Schedule),
+				zap.String("weekly_schedule", cfg.Telegram.Summary.WeeklySchedule),
+			)
+		}
 	}
 
 	// 9. Start HTTP server with chi router
@@ -137,7 +162,10 @@ func runServe(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to start HTTP server: %w", err)
 	}
 
-	// 10. Handle graceful shutdown
+	// 10. Recover pending/failed provisions
+	go recoverPendingProvisions()
+
+	// 11. Handle graceful shutdown
 	waitForShutdown()
 
 	return nil
@@ -247,10 +275,10 @@ func waitForShutdown() {
 		}
 	}
 
-	// Stop cron scheduler
-	if cronScheduler != nil {
-		logger.Info("Stopping cron scheduler...")
-		cronScheduler.Stop()
+	// Stop scheduler
+	if schedulerInstance != nil {
+		logger.Info("Stopping scheduler...")
+		schedulerInstance.Stop()
 	}
 
 	// Shutdown Telegram notifier
@@ -429,8 +457,19 @@ func debugRetryHandler(w http.ResponseWriter, r *http.Request) {
 	// Trigger retry in background
 	go func() {
 		if provisionerInstance != nil {
-			// This would trigger the actual retry
-			logger.Info("Retry triggered", zap.String("id", id))
+			logger.Info("Triggering retry", zap.String("id", id), zap.String("domain", st.Domain))
+			if err := provisionerInstance.Provision(st.Domain, ""); err != nil {
+				logger.Error("Retry failed",
+					zap.String("id", id),
+					zap.String("domain", st.Domain),
+					zap.Error(err),
+				)
+			} else {
+				logger.Info("Retry succeeded",
+					zap.String("id", id),
+					zap.String("domain", st.Domain),
+				)
+			}
 		}
 	}()
 
@@ -460,6 +499,32 @@ func debugStateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, response)
+}
+
+// recoverPendingProvisions recovers pending/failed provisions on startup
+// Runs in background with backoff delay between each domain
+func recoverPendingProvisions() {
+	if provisionerInstance == nil || stateManager == nil {
+		return
+	}
+
+	// Wait a few seconds after server starts before recovery
+	time.Sleep(5 * time.Second)
+
+	pendingCount := len(stateManager.Recover())
+	if pendingCount == 0 {
+		logger.Info("No pending/failed provisions to recover")
+		return
+	}
+
+	logger.Info("Starting recovery of pending/failed provisions",
+		zap.Int("count", pendingCount),
+	)
+
+	ctx := context.Background()
+	if err := provisionerInstance.Recover(ctx); err != nil {
+		logger.Error("Recovery failed", zap.Error(err))
+	}
 }
 
 // respondJSON writes a JSON response

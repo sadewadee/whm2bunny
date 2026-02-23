@@ -1,0 +1,8 @@
+{
+  "webhook_url": "http://localhost:9090/hook",
+  "secret": "change-me-in-production",
+  "timeout": 30,
+  "max_retries": 3,
+  "retry_delay": 2,
+  "debug": false
+}
