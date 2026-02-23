@@ -4,11 +4,12 @@ import (
 	"testing"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/mordenhost/whm2bunny/config"
 	"github.com/mordenhost/whm2bunny/internal/bunny"
 	"github.com/mordenhost/whm2bunny/internal/notifier"
 	"github.com/mordenhost/whm2bunny/internal/state"
-	"go.uber.org/zap"
 )
 
 func TestNewScheduler(t *testing.T) {

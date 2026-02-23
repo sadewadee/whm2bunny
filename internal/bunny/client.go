@@ -230,11 +230,6 @@ func (c *Client) post(ctx context.Context, path string, body, result interface{}
 	return c.doRequest(ctx, http.MethodPost, path, body, result)
 }
 
-// put performs a PUT request
-func (c *Client) put(ctx context.Context, path string, body, result interface{}) error {
-	return c.doRequest(ctx, http.MethodPut, path, body, result)
-}
-
 // delete performs a DELETE request
 func (c *Client) delete(ctx context.Context, path string) error {
 	return c.doRequest(ctx, http.MethodDelete, path, nil, nil)

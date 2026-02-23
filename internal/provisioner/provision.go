@@ -6,11 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/mordenhost/whm2bunny/config"
 	"github.com/mordenhost/whm2bunny/internal/bunny"
 	"github.com/mordenhost/whm2bunny/internal/notifier"
 	"github.com/mordenhost/whm2bunny/internal/state"
-	"go.uber.org/zap"
 )
 
 // Provisioner orchestrates the provisioning of BunnyDNS and BunnyCDN resources
@@ -148,10 +149,12 @@ func (p *Provisioner) Provision(domain, user string) error {
 
 	// Send success notification
 	cdnHostname := ""
+	var zoneID int64
 	if finalState != nil {
 		cdnHostname = finalState.CDNHostname
+		zoneID = finalState.ZoneID
 	}
-	notifErr := p.notifier.NotifySuccess(ctx, domain, finalState.ZoneID, cdnHostname, duration)
+	notifErr := p.notifier.NotifySuccess(ctx, domain, zoneID, cdnHostname, duration)
 	if notifErr != nil {
 		p.logger.Warn("failed to send success notification",
 			zap.String("domain", domain),

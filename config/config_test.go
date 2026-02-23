@@ -170,8 +170,8 @@ func TestValidateMissingRequired(t *testing.T) {
 			name:      "missing api key",
 			unsetVars: []string{},
 			setVars: map[string]string{
-				"ORIGIN_IP": "192.0.2.1",
-				"WHM_HOOK_SECRET":  "test-secret",
+				"ORIGIN_IP":       "192.0.2.1",
+				"WHM_HOOK_SECRET": "test-secret",
 			},
 			wantErr: "bunny.api_key is required",
 		},
@@ -188,8 +188,8 @@ func TestValidateMissingRequired(t *testing.T) {
 			name:      "missing webhook secret",
 			unsetVars: []string{},
 			setVars: map[string]string{
-				"BUNNY_API_KEY":    "test-api-key",
-				"ORIGIN_IP": "192.0.2.1",
+				"BUNNY_API_KEY": "test-api-key",
+				"ORIGIN_IP":     "192.0.2.1",
 			},
 			wantErr: "webhook.secret is required",
 		},

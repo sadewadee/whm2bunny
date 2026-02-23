@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"go.uber.org/zap"
+
 	"github.com/mordenhost/whm2bunny/internal/bunny"
 	"github.com/mordenhost/whm2bunny/internal/state"
-	"go.uber.org/zap"
 )
 
 const (

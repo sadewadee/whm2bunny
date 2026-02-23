@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mordenhost/whm2bunny/internal/webhook"
 	"go.uber.org/zap"
+
+	"github.com/mordenhost/whm2bunny/internal/webhook"
 )
 
 const (
@@ -85,7 +86,6 @@ func DefaultValidatorConfig() *ValidatorConfig {
 		DNSTimeout:      5 * time.Second,
 	}
 }
-
 
 // ValidateDomain validates a domain name format and DNS records
 func (v *Validator) ValidateDomain(domain string) error {
@@ -190,10 +190,10 @@ func (v *Validator) ValidateWebhookPayload(payload *webhook.WebhookPayload) erro
 
 	// Validate event type
 	validEvents := map[string]bool{
-		"account_created":    true,
-		"addon_created":      true,
-		"subdomain_created":  true,
-		"account_deleted":    true,
+		"account_created":   true,
+		"addon_created":     true,
+		"subdomain_created": true,
+		"account_deleted":   true,
 	}
 
 	if !validEvents[payload.Event] {
@@ -287,8 +287,10 @@ func (v *Validator) ValidateOriginIP(ip string) error {
 	if ipRegex.MatchString(ip) {
 		parts := strings.Split(ip, ".")
 		for _, part := range parts {
-			num := 0
-			fmt.Sscanf(part, "%d", &num)
+			var num int
+			if _, err := fmt.Sscanf(part, "%d", &num); err != nil {
+				return fmt.Errorf("invalid IP address octet: %s", part)
+			}
 			if num < 0 || num > 255 {
 				return fmt.Errorf("invalid IP address octet: %s", part)
 			}

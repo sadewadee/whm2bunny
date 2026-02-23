@@ -7,12 +7,13 @@ import (
 	"sort"
 	"time"
 
+	"github.com/robfig/cron/v3"
+	"go.uber.org/zap"
+
 	"github.com/mordenhost/whm2bunny/config"
 	"github.com/mordenhost/whm2bunny/internal/bunny"
 	"github.com/mordenhost/whm2bunny/internal/notifier"
 	"github.com/mordenhost/whm2bunny/internal/state"
-	"github.com/robfig/cron/v3"
-	"go.uber.org/zap"
 )
 
 // Scheduler manages cron jobs for daily and weekly summaries

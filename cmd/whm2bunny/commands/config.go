@@ -5,9 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mordenhost/whm2bunny/config"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
+
+	"github.com/mordenhost/whm2bunny/config"
 )
 
 // ConfigCmd handles configuration management
@@ -63,7 +64,11 @@ func runConfigGenerate(cmd *cobra.Command, args []string) error {
 		fmt.Printf("File already exists: %s\n", outputPath)
 		fmt.Print("Overwrite? (y/N): ")
 		var response string
-		fmt.Scanln(&response)
+		if _, err := fmt.Scanln(&response); err != nil {
+			// If there's an error reading input, default to no
+			fmt.Println("\nAborted")
+			return nil
+		}
 		if response != "y" && response != "Y" {
 			fmt.Println("Aborted")
 			return nil

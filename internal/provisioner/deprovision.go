@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"github.com/mordenhost/whm2bunny/internal/bunny"
 	"github.com/mordenhost/whm2bunny/internal/state"
-	"go.uber.org/zap"
 )
 
 // Deprovisioner handles deprovisioning (removal) of domains
@@ -287,8 +288,8 @@ func (d *Deprovisioner) deprovisionSubdomainByName(ctx context.Context, subdomai
 	// Find parent zone
 	parentZone, err := d.provisioner.bunnyClient.GetDNSZone(ctx, parentDomain)
 	if err == nil && parentZone != nil {
-		// Try to delete CNAME from parent zone
-		d.deleteSubdomainCNAME(ctx, parentZone.ID, subdomain, fullDomain)
+		// Try to delete CNAME from parent zone (ignore errors, best effort)
+		_ = d.deleteSubdomainCNAME(ctx, parentZone.ID, subdomain, fullDomain)
 	}
 
 	// Find and delete pull zone

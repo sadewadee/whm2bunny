@@ -13,6 +13,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+
 	"github.com/mordenhost/whm2bunny/config"
 	"github.com/mordenhost/whm2bunny/internal/bunny"
 	"github.com/mordenhost/whm2bunny/internal/notifier"
@@ -20,9 +23,12 @@ import (
 	"github.com/mordenhost/whm2bunny/internal/scheduler"
 	"github.com/mordenhost/whm2bunny/internal/state"
 	"github.com/mordenhost/whm2bunny/internal/webhook"
-	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
+
+// contextKey is a custom type for context keys to avoid collisions
+type contextKey string
+
+const loggerKey contextKey = "logger"
 
 var (
 	// startTime tracks when the server started
@@ -69,7 +75,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to initialize logger: %w", err)
 	}
-	defer logger.Sync()
+	defer func() { _ = logger.Sync() }()
 
 	logger.Info("Starting whm2bunny",
 		zap.String("version", Version),
@@ -292,7 +298,7 @@ func waitForShutdown() {
 	// Sync logger
 	if logger != nil {
 		logger.Info("Shutdown complete")
-		logger.Sync()
+		_ = logger.Sync()
 	}
 }
 
@@ -300,7 +306,7 @@ func waitForShutdown() {
 func requestContextMiddleware(l *zap.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), "logger", l)
+			ctx := context.WithValue(r.Context(), loggerKey, l)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -532,11 +538,14 @@ func respondJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
-	// Use json.Marshal instead of encoder for simpler error handling
 	if data != nil {
-		// In production, you'd want proper error handling here
-		// For now, we'll just write the JSON
-		buf, _ := json.Marshal(data)
-		w.Write(buf)
+		buf, err := json.Marshal(data)
+		if err != nil {
+			logger.Error("Failed to marshal JSON response", zap.Error(err))
+			return
+		}
+		if _, err := w.Write(buf); err != nil {
+			logger.Error("Failed to write response", zap.Error(err))
+		}
 	}
 }
