@@ -1,11 +1,17 @@
-# whm2bunny
+<p align="center">
+  <img src="assets/banner.svg" alt="whm2bunny - Automated DNS & CDN Provisioning" width="100%">
+</p>
 
-[![Test](https://github.com/mordenhost/whm2bunny/actions/workflows/test.yml/badge.svg)](https://github.com/mordenhost/whm2bunny/actions/workflows/test.yml)
-[![Release](https://github.com/mordenhost/whm2bunny/actions/workflows/release.yml/badge.svg)](https://github.com/mordenhost/whm2bunny/actions/workflows/release.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/mordenhost/whm2bunny)](https://goreportcard.com/report/github.com/mordenhost/whm2bunny)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <a href="https://github.com/mordenhost/whm2bunny/actions/workflows/test.yml"><img src="https://github.com/mordenhost/whm2bunny/actions/workflows/test.yml/badge.svg" alt="Test"></a>
+  <a href="https://github.com/mordenhost/whm2bunny/actions/workflows/release.yml"><img src="https://github.com/mordenhost/whm2bunny/actions/workflows/release.yml/badge.svg" alt="Release"></a>
+  <a href="https://goreportcard.com/report/github.com/mordenhost/whm2bunny"><img src="https://goreportcard.com/badge/github.com/mordenhost/whm2bunny" alt="Go Report Card"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
 
-**Automated DNS & CDN provisioning system for [mordenhost.com](https://mordenhost.com)**
+<p align="center">
+  <strong>Automated DNS & CDN provisioning system for <a href="https://mordenhost.com">mordenhost.com</a></strong>
+</p>
 
 A production-grade Go daemon that automatically provisions **BunnyDNS Zones** and **BunnyCDN Pull Zones** when new domains are added to WHM/cPanel. Designed specifically for [mordenhost.com](https://mordenhost.com) hosting infrastructure.
 
