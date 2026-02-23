@@ -3,9 +3,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mordenhost/whm2bunny/actions/workflows/test.yml"><img src="https://github.com/mordenhost/whm2bunny/actions/workflows/test.yml/badge.svg" alt="Test"></a>
-  <a href="https://github.com/mordenhost/whm2bunny/actions/workflows/release.yml"><img src="https://github.com/mordenhost/whm2bunny/actions/workflows/release.yml/badge.svg" alt="Release"></a>
-  <a href="https://goreportcard.com/report/github.com/mordenhost/whm2bunny"><img src="https://goreportcard.com/badge/github.com/mordenhost/whm2bunny" alt="Go Report Card"></a>
+  <a href="https://github.com/sadewadee/whm2bunny/actions/workflows/test.yml"><img src="https://github.com/sadewadee/whm2bunny/actions/workflows/test.yml/badge.svg" alt="Test"></a>
+  <a href="https://github.com/sadewadee/whm2bunny/actions/workflows/release.yml"><img src="https://github.com/sadewadee/whm2bunny/actions/workflows/release.yml/badge.svg" alt="Release"></a>
+  <a href="https://goreportcard.com/report/github.com/sadewadee/whm2bunny"><img src="https://goreportcard.com/badge/github.com/sadewadee/whm2bunny" alt="Go Report Card"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
 </p>
 
@@ -126,7 +126,7 @@ This eliminates manual DNS configuration and CDN setup, reducing provisioning ti
 
 ```bash
 # Download latest release
-curl -sSL https://github.com/mordenhost/whm2bunny/releases/latest/download/whm2bunny-linux-amd64.tar.gz | tar xz
+curl -sSL https://github.com/sadewadee/whm2bunny/releases/latest/download/whm2bunny-linux-amd64.tar.gz | tar xz
 
 # Make executable
 chmod +x whm2bunny
@@ -160,7 +160,7 @@ docker run -d \
 
 ```bash
 # Clone repository
-git clone https://github.com/mordenhost/whm2bunny.git
+git clone https://github.com/sadewadee/whm2bunny.git
 cd whm2bunny
 
 # Copy and edit config
@@ -479,7 +479,7 @@ curl -X POST http://localhost:9090/debug/retry/{state_id}
 
 ```bash
 # Clone
-git clone https://github.com/mordenhost/whm2bunny.git
+git clone https://github.com/sadewadee/whm2bunny.git
 cd whm2bunny
 
 # Build
@@ -582,5 +582,5 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Support
 
-- [GitHub Issues](https://github.com/mordenhost/whm2bunny/issues)
+- [GitHub Issues](https://github.com/sadewadee/whm2bunny/issues)
 - [mordenhost.com](https://mordenhost.com)
