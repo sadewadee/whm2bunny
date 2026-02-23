@@ -5,30 +5,44 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/mordenhost/whm2bunny)](https://goreportcard.com/report/github.com/mordenhost/whm2bunny)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Go daemon that auto-provisions **BunnyDNS Zone + BunnyCDN Pull Zone** when a new domain is added to WHM/cPanel. It runs as an HTTP server receiving webhooks from WHM hooks.
+**Automated DNS & CDN provisioning system for [mordenhost.com](https://mordenhost.com)**
+
+A production-grade Go daemon that automatically provisions **BunnyDNS Zones** and **BunnyCDN Pull Zones** when new domains are added to WHM/cPanel. Designed specifically for [mordenhost.com](https://mordenhost.com) hosting infrastructure.
 
 ---
 
-## Table of Contents
+## Overview
 
-- [How It Works](#how-it-works)
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [WHM/cPanel Integration](#whmcpanel-integration)
-- [API Endpoints](#api-endpoints)
-- [Telegram Bot Commands](#telegram-bot-commands)
-- [Auto-Recovery](#auto-recovery)
-- [Custom Nameservers](#custom-nameservers)
-- [Troubleshooting](#troubleshooting)
-- [Development](#development)
-- [Architecture](#architecture)
-- [Security](#security)
-- [License](#license)
+**whm2bunny** bridges your WHM/cPanel server with Bunny.net services, enabling fully automated domain provisioning:
+
+- When a new cPanel account is created → DNS zone + CDN automatically configured
+- When an addon domain is added → DNS records + CDN pull zone created
+- When a subdomain is created → CDN-enabled automatically
+- When an account is terminated → All resources cleaned up
+
+This eliminates manual DNS configuration and CDN setup, reducing provisioning time from ~15 minutes to seconds.
 
 ---
 
-## How It Works
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Auto DNS Provisioning** | Creates BunnyDNS zones with A, CNAME, MX, TXT (SPF/DMARC) records |
+| **CDN Integration** | Auto-provisions BunnyCDN pull zones (Asia+Oceania region) |
+| **Custom Nameservers** | Uses `ns1.mordenhost.com` and `ns2.mordenhost.com` |
+| **WHM/cPanel Hooks** | Seamless integration via standard WHM script hooks |
+| **HMAC Security** | All webhooks verified with HMAC-SHA256 signatures |
+| **Telegram Notifications** | Real-time alerts for provisioning events |
+| **Auto-Recovery** | Failed provisions automatically retry with exponential backoff |
+| **SSL Monitoring** | Verifies SSL certificate issuance after CDN setup |
+| **Daily Summaries** | Bandwidth statistics delivered to Telegram |
+| **Input Validation** | Domain validation with DNS checks (RFC 1035 compliant) |
+| **State Persistence** | Survives crashes and restarts with state recovery |
+
+---
+
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -89,7 +103,7 @@ A Go daemon that auto-provisions **BunnyDNS Zone + BunnyCDN Pull Zone** when a n
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Event Types
+### Supported Events
 
 | Event | Trigger | Action |
 |-------|---------|--------|
@@ -100,31 +114,18 @@ A Go daemon that auto-provisions **BunnyDNS Zone + BunnyCDN Pull Zone** when a n
 
 ---
 
-## Features
-
-- **Automatic DNS Provisioning** - Creates BunnyDNS zones with custom nameservers
-- **CDN Integration** - Auto-provisions BunnyCDN pull zones (Asia+Oceania region)
-- **WHM/cPanel Integration** - Seamless webhook integration with cPanel hooks
-- **Telegram Notifications** - Real-time alerts for provisioning events
-- **Crash Recovery** - State persistence with automatic resume on restart
-- **Auto-Recovery** - Failed provisions automatically retry with backoff
-- **SSL Certificate Monitoring** - Notifies when SSL is issued
-- **Daily/Weekly Summaries** - Bandwidth statistics via Telegram
-- **Input Validation** - Domain, subdomain, and payload validation with DNS checks
-- **Bot Commands** - `/purge`, `/stats`, `/status`, and more
-
----
-
 ## Quick Start
 
-### Option 1: Binary Installation
+### Download Binary
 
 ```bash
-# Download latest release from GitHub
+# Download latest release
 curl -sSL https://github.com/mordenhost/whm2bunny/releases/latest/download/whm2bunny-linux-amd64.tar.gz | tar xz
+
+# Make executable
 chmod +x whm2bunny
 
-# Generate config
+# Generate default config
 ./whm2bunny config generate config.yaml
 
 # Edit config with your values
@@ -134,7 +135,7 @@ vim config.yaml
 ./whm2bunny serve
 ```
 
-### Option 2: Docker
+### Docker
 
 ```bash
 docker run -d \
@@ -149,7 +150,7 @@ docker run -d \
   mordenhost/whm2bunny:latest
 ```
 
-### Option 3: Docker Compose
+### Docker Compose
 
 ```bash
 # Clone repository
@@ -172,9 +173,9 @@ docker-compose up -d
 
 | Variable | Required | Description | Default |
 |----------|----------|-------------|---------|
-| `BUNNY_API_KEY` | ✅ Yes | Bunny.net API key | - |
-| `ORIGIN_IP` | ✅ Yes | IP of WHM/cPanel origin server | - |
-| `WHM_HOOK_SECRET` | ✅ Yes | HMAC secret for webhook verification | - |
+| `BUNNY_API_KEY` | Yes | Bunny.net API key | - |
+| `ORIGIN_IP` | Yes | IP of WHM/cPanel origin server | - |
+| `WHM_HOOK_SECRET` | Yes | HMAC secret for webhook verification | - |
 | `SERVER_PORT` | No | HTTP server port | `9090` |
 | `TELEGRAM_BOT_TOKEN` | No | Telegram bot token | - |
 | `TELEGRAM_CHAT_ID` | No | Telegram chat ID | - |
@@ -262,7 +263,7 @@ chmod 755 /var/log/whm2bunny
 **Option A: Via WHM Web Interface**
 
 1. Login to WHM as root
-2. Navigate to: **Home » Script Hooks » Add Script Hook**
+2. Navigate to: **Home > Script Hooks > Add Script Hook**
 3. Add hooks for each event:
 
 | Event Type | Script Path | Evaluator |
@@ -300,16 +301,13 @@ chmod 755 /var/log/whm2bunny
   --exectype script --manual 1 --arg killacct
 ```
 
-### Step 3: Verify Hooks
+### Step 3: Verify & Test
 
 ```bash
+# Verify hooks are registered
 /usr/local/cpanel/bin/manage_hooks list | grep whm_hook
-```
 
-### Step 4: Test Hook
-
-```bash
-# Test account creation manually
+# Test manually
 echo '{"domain":"test.example.com","user":"testuser"}' | \
   /usr/local/cpanel/whm2bunny/whm_hook.py createacct
 
@@ -479,10 +477,10 @@ git clone https://github.com/mordenhost/whm2bunny.git
 cd whm2bunny
 
 # Build
-make build
+go build -o whm2bunny ./cmd/whm2bunny
 
 # Test
-make test
+go test ./...
 
 # Run with debug
 DEBUG=true ./whm2bunny serve
@@ -502,7 +500,7 @@ DEBUG=true ./whm2bunny serve
 
 ---
 
-## Architecture
+## Project Structure
 
 ```
 whm2bunny/
@@ -543,11 +541,10 @@ whm2bunny/
 │   └── retry/                  # Retry logic
 │       └── retry.go            # Exponential backoff
 │
-├── config/                     # Configuration loading
+├��─ config/                     # Configuration loading
 ├── scripts/                    # Installation scripts
 │   ├── whm_hook.py             # WHM hook script
-│   ├── hook_config.json.example
-│   └── README.md               # Hook installation guide
+│   └── hook_config.json.example
 │
 └── docs/                       # Documentation
 ```
@@ -565,6 +562,12 @@ whm2bunny/
 
 ---
 
+## About mordenhost.com
+
+[mordenhost.com](https://mordenhost.com) is a web hosting provider offering reliable cPanel-based hosting solutions. This tool was developed to automate DNS and CDN provisioning for our infrastructure, ensuring fast content delivery through BunnyCDN's Asia-Pacific edge network.
+
+---
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
@@ -574,4 +577,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Support
 
 - [GitHub Issues](https://github.com/mordenhost/whm2bunny/issues)
-- [Documentation](docs/)
+- [mordenhost.com](https://mordenhost.com)
