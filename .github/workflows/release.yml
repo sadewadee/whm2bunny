@@ -51,15 +51,18 @@ jobs:
       - name: Create archives
         run: |
           cd dist
-          for binary in whm2bunny-*; do
+          for binary in whm2bunny-linux-* whm2bunny-darwin-*; do
+            # Skip tar.gz files
+            [[ "$binary" == *.tar.gz ]] && continue
             os_arch=${binary#whm2bunny-}
+            rm -rf whm2bunny-${os_arch}
             mkdir -p whm2bunny-${os_arch}
             cp ${binary} whm2bunny-${os_arch}/whm2bunny
             cp ../config.yaml.example whm2bunny-${os_arch}/config.yaml.example
             cp ../scripts/install.sh whm2bunny-${os_arch}/install.sh
             cp ../scripts/hook_handler.pl whm2bunny-${os_arch}/hook_handler.pl
             tar -czvf whm2bunny-${os_arch}.tar.gz whm2bunny-${os_arch}
-            rm -rf whm2bunny-${os_arch}
+            rm -rf whm2bunny-${os_arch} ${binary}
           done
 
       - name: Generate checksums
