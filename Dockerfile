@@ -1,6 +1,9 @@
 # Multi-stage Dockerfile for whm2bunny
 # Stage 1: Build
-FROM golang:1.23-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
+
+# Build arguments for multi-arch
+ARG TARGETARCH
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
@@ -15,15 +18,15 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy source code
-COPY . .
+COPY .  .
 
 # Build arguments
 ARG VERSION=dev
 ARG COMMIT=unknown
 ARG BUILD_TIME=unknown
 
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+# Build the binary (multi-arch via TARGETARCH)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build \
     -ldflags="-w -s -X github.com/mordenhost/whm2bunny/cmd/whm2bunny/commands.Version=${VERSION} -X github.com/mordenhost/whm2bunny/cmd/whm2bunny/commands.Commit=${COMMIT} -X github.com/mordenhost/whm2bunny/cmd/whm2bunny/commands.BuildTime=${BUILD_TIME}" \
     -o whm2bunny ./cmd/whm2bunny
 

@@ -204,7 +204,9 @@ sub send_to_whm2bunny {
 
     return unless $SECRET;
 
-    my $json = encode_json($payload);
+    # Use canonical (sorted keys) JSON to match Python hook's sort_keys=True
+    my $coder = JSON::XS->new->canonical(1)->utf8(1);
+    my $json = $coder->encode($payload);
 
     # Generate HMAC signature
     my $sig = hmac_sha256_hex($json, $SECRET);
@@ -225,7 +227,7 @@ sub send_to_whm2bunny {
     }
 
     if ($response->is_success) {
-        $logger->info("whm2bunny hook sent: " . $payload->{'event'} . " for " . $payload->{'domain'});
+        $logger->info("whm2bunny hook sent: " . $payload->{'event'} . " for " . ($payload->{'domain'} // $payload->{'subdomain'} // 'unknown'));
         return 1;
     } else {
         $logger->error("whm2bunny hook failed: " . $response->status_line);

@@ -1,6 +1,6 @@
 module github.com/mordenhost/whm2bunny
 
-go 1.25.1
+go 1.24.6
 
 require (
 	github.com/go-chi/chi/v5 v5.2.5
